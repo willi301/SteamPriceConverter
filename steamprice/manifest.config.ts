@@ -11,7 +11,8 @@ export default defineManifest({
   permissions: ["storage"],
 
   host_permissions: [
-    "https://store.steampowered.com/*"
+    "https://store.steampowered.com/*",
+    "https://api.frankfurter.dev/*"
   ],
 
   background: {

@@ -1,5 +1,7 @@
-
-import { fetchRegionalPrice } from "../services/steamApi";
+import {
+  fetchRegionalPrice,
+  fetchUsdExchangeRate
+} from "../services/steamApi";
 
 import {
   REGIONS,
@@ -44,7 +46,7 @@ async function getRegionalPrices(
   appId: string
 ): Promise<RegionalPricesResponse> {
 
-  const cacheKey = `prices_${appId}`;
+  const cacheKey = `prices_v2_${appId}`;
 
   // Check cached prices first.
   const cached = await extensionApi.storage.local.get(cacheKey);
@@ -59,19 +61,26 @@ async function getRegionalPrices(
     return cachedEntry.data;
   }
 
+
   // Fetch all three regions concurrently.
   const prices = await Promise.all(
     REGIONS.map(async (region) => {
       try {
-        const price = await fetchRegionalPrice(
-          appId,
-          region.countryCode
-        );
+        const [price, exchangeRate] = await Promise.all([
+          fetchRegionalPrice(appId, region.countryCode),
+          fetchUsdExchangeRate(region.currencyCode),
+        ]);
+
+        const usdEquivalent =
+          price !== null
+            ? (price.final / 100) * exchangeRate
+            : null;
 
         return {
           region,
           price,
-          available: price !== null
+          available: price !== null,
+          usdEquivalent,
         };
       } catch (error) {
         console.error(
@@ -82,28 +91,18 @@ async function getRegionalPrices(
         return {
           region,
           price: null,
-          available: false
+          available: false,
+          usdEquivalent: null,
         };
       }
     })
   );
 
-  const result: RegionalPricesResponse = {
-    appId,
-    prices
-  };
-
-  // Save the result for 15 minutes.
-  const cacheEntry: CacheEntry = {
-    timestamp: Date.now(),
-    data: result
-  };
-
+  const data: RegionalPricesResponse = { appId, prices };
   await extensionApi.storage.local.set({
-    [cacheKey]: cacheEntry
+    [cacheKey]: { timestamp: Date.now(), data } satisfies CacheEntry,
   });
-
-  return result;
+  return data;
 }
 
 extensionApi.runtime.onMessage.addListener(
@@ -132,3 +131,4 @@ extensionApi.runtime.onMessage.addListener(
     return true;
   }
 );
+

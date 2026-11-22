@@ -129,9 +129,17 @@ export default function PricePanel({ appId }: Props) {
                           </span>
                         )}
 
-                        <span>
-                          {item.price.final_formatted}
-                        </span>
+                        <div className="sp-price-values">
+                          <span className="sp-local-price">
+                            {item.price.final_formatted}
+                          </span>
+
+                          {item.usdEquivalent !== null && (
+                            <span className="sp-usd-price">
+                              ≈ ${item.usdEquivalent.toFixed(2)} USD
+                            </span>
+                          )}
+                        </div>
                       </>
                     ) : (
                       <span className="sp-unavailable">

@@ -41,3 +41,28 @@ export async function fetchRegionalPrice(
 
   return appData.data?.price_overview ?? null;
 }
+
+interface ExchangeRateResponse {
+  date: string;
+  base: string;
+  quote: string;
+  rate: number;
+}
+
+export async function fetchUsdExchangeRate(
+  currencyCode: string
+): Promise<number> {
+  if (currencyCode === "USD") return 1;
+
+  const url = `https://api.frankfurter.dev/v2/rate/${currencyCode.toLowerCase()}/usd`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch exchange rate.");
+  }
+
+  const data = await response.json() as ExchangeRateResponse;
+
+  return data.rate;
+}

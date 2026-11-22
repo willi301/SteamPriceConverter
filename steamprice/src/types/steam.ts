@@ -6,6 +6,7 @@ export interface Region {
   countryName: string;
   currencyCode: string;
   flag: string;
+  minorUnitDigits: number;
 }
 
 export const REGIONS: Region[] = [
@@ -13,20 +14,23 @@ export const REGIONS: Region[] = [
     countryCode: "us",
     countryName: "United States",
     currencyCode: "USD",
-    flag: "🇺🇸"
+    flag: "🇺🇸",
+    minorUnitDigits: 2,
   },
   {
     countryCode: "id",
     countryName: "Indonesia",
     currencyCode: "IDR",
-    flag: "🇮🇩"
+    flag: "🇮🇩",
+    minorUnitDigits: 0,
   },
   {
     countryCode: "de",
     countryName: "Germany",
     currencyCode: "EUR",
-    flag: "🇩🇪"
-  }
+    flag: "🇩🇪",
+    minorUnitDigits: 2,
+  },
 ];
 
 export interface SteamPriceOverview {
@@ -42,6 +46,7 @@ export interface RegionalPrice {
   region: Region;
   price: SteamPriceOverview | null;
   available: boolean;
+  usdEquivalent: number | null;
 }
 
 export interface RegionalPricesResponse {
