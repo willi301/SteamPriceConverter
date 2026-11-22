@@ -121,31 +121,23 @@ export default function PricePanel({ appId }: Props) {
                   </div>
 
                   <div className="sp-price">
-                    {item.available && item.price ? (
-                      <>
-                        {item.price.discount_percent > 0 && (
-                          <span className="sp-discount">
-                            -{item.price.discount_percent}%
-                          </span>
-                        )}
-
-                        <div className="sp-price-values">
-                          <span className="sp-local-price">
-                            {item.price.final_formatted}
-                          </span>
-
-                          {item.usdEquivalent !== null && (
-                            <span className="sp-usd-price">
-                              ≈ ${item.usdEquivalent.toFixed(2)} USD
+                    {item.free ? (
+                          <span className="sp-free">Free</span>
+                        ) : item.available && item.price ? (
+                          <div className="sp-price-values">
+                            <span className="sp-local-price">
+                              {item.price.final_formatted}
                             </span>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <span className="sp-unavailable">
-                        Unavailable
-                      </span>
-                    )}
+
+                            {item.usdEquivalent !== null && (
+                              <span className="sp-usd-price">
+                                ≈ ${item.usdEquivalent.toFixed(2)} USD
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="sp-unavailable">Unavailable</span>
+                        )}
                   </div>
                 </div>
               ))}

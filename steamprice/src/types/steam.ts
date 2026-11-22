@@ -47,6 +47,7 @@ export interface RegionalPrice {
   price: SteamPriceOverview | null;
   available: boolean;
   usdEquivalent: number | null;
+  free: boolean;
 }
 
 export interface RegionalPricesResponse {

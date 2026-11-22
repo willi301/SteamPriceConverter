@@ -46,7 +46,7 @@ async function getRegionalPrices(
   appId: string
 ): Promise<RegionalPricesResponse> {
 
-  const cacheKey = `prices_v2_${appId}`;
+  const cacheKey = `prices_v3_${appId}`;
 
   // Check cached prices first.
   const cached = await extensionApi.storage.local.get(cacheKey);
@@ -63,40 +63,48 @@ async function getRegionalPrices(
 
 
   // Fetch all three regions concurrently.
-  const prices = await Promise.all(
-    REGIONS.map(async (region) => {
-      try {
-        const [price, exchangeRate] = await Promise.all([
-          fetchRegionalPrice(appId, region.countryCode),
-          fetchUsdExchangeRate(region.currencyCode),
-        ]);
+  
+const prices = await Promise.all(
+  REGIONS.map(async (region) => {
+    try {
+      const [result, exchangeRate] = await Promise.all([
+        fetchRegionalPrice(appId, region.countryCode),
+        fetchUsdExchangeRate(region.currencyCode),
+      ]);
 
-        const usdEquivalent =
-          price !== null
-            ? (price.final / 100) * exchangeRate
+      const { price, free } = result;
+
+      const usdEquivalent =
+        price !== null
+          ? (price.final / 100) * exchangeRate
+          : free
+            ? 0
             : null;
 
-        return {
-          region,
-          price,
-          available: price !== null,
-          usdEquivalent,
-        };
-      } catch (error) {
-        console.error(
-          `Failed to fetch ${region.countryName}:`,
-          error
-        );
+      return {
+        region,
+        price,
+        available: price !== null || free,
+        free,
+        usdEquivalent,
+      };
+    } catch (error) {
+      console.error(
+        `Failed to fetch ${region.countryName}:`,
+        error
+      );
 
-        return {
-          region,
-          price: null,
-          available: false,
-          usdEquivalent: null,
-        };
-      }
-    })
-  );
+      return {
+        region,
+        price: null,
+        available: false,
+        free: false,
+        usdEquivalent: null,
+      };
+    }
+  })
+);
+
 
   const data: RegionalPricesResponse = { appId, prices };
   await extensionApi.storage.local.set({
