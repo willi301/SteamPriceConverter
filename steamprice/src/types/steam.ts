@@ -6,7 +6,6 @@ export interface Region {
   countryName: string;
   currencyCode: string;
   flag: string;
-  minorUnitDigits: number;
 }
 
 export const REGIONS: Region[] = [
@@ -15,21 +14,18 @@ export const REGIONS: Region[] = [
     countryName: "United States",
     currencyCode: "USD",
     flag: "🇺🇸",
-    minorUnitDigits: 2,
   },
   {
     countryCode: "id",
     countryName: "Indonesia",
     currencyCode: "IDR",
     flag: "🇮🇩",
-    minorUnitDigits: 0,
   },
   {
     countryCode: "de",
     countryName: "Germany",
     currencyCode: "EUR",
     flag: "🇩🇪",
-    minorUnitDigits: 2,
   },
 ];
 
