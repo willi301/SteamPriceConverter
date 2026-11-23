@@ -15,7 +15,11 @@ interface ExchangeRateResponse {
 export async function fetchRegionalPrice(
   appId: string,
   countryCode: CountryCode
-): Promise<{ price: SteamPriceOverview | null; free: boolean }> {
+): Promise<{
+  name: string;
+  price: SteamPriceOverview | null;
+  free: boolean;
+}> {
   const url = new URL(STEAM_API);
 
   url.searchParams.set("appids", appId);
@@ -37,9 +41,10 @@ url.searchParams.set("filters", "basic,price_overview");
   }
 
   return {
-    price: appData.data.price_overview ?? null,
-    free: appData.data.is_free === true,
-  };
+  name: appData.data.name ?? `App ${appId}`,
+  price: appData.data.price_overview ?? null,
+  free: appData.data.is_free === true,
+};
 }
 
 export async function fetchUsdExchangeRate(

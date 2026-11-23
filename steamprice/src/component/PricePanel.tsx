@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+import { addToCart, getCart } from "../services/cartService";
 
 import type {
   RegionalPricesResponse
@@ -10,6 +11,9 @@ interface Props {
 }
 
 export default function PricePanel({ appId }: Props) {
+  const [cartCount, setCartCount] = useState(0);
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [cartMessage, setCartMessage] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [data, setData] =
@@ -17,11 +21,26 @@ export default function PricePanel({ appId }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    async function loadCart() {
+      try {
+        const cart = await getCart();
+        setCartCount(cart.items.length);
+      } catch (error) {
+        console.error("Failed to load cart:", error);
+      }
+    }
+
+    loadCart();
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function loadPrices() {
       setLoading(true);
       setError(null);
+
+      
 
       try {
         const extensionApi = (
@@ -68,6 +87,34 @@ export default function PricePanel({ appId }: Props) {
       cancelled = true;
     };
   }, [appId]);
+
+  async function handleAddToCart() {
+    if (!data || !data.gameName || addingToCart) return;
+
+    setAddingToCart(true);
+    setCartMessage("");
+
+    try {
+      const cart = await addToCart(appId, data.gameName);
+
+      setCartCount(cart.items.length);
+
+      const alreadyAdded = cart.items.filter(
+        (item) => item.appId === appId
+      ).length > 0;
+
+      setCartMessage(
+        alreadyAdded
+          ? "Game is in your cart!"
+          : "Added to cart!"
+      );
+    } catch (error) {
+      console.error("Failed to add game:", error);
+      setCartMessage("Could not add game.");
+    } finally {
+      setAddingToCart(false);
+    }
+  }
 
   return (
     <section className="sp-panel">
@@ -147,6 +194,44 @@ export default function PricePanel({ appId }: Props) {
               </div>
             </>
           )}
+
+          <div className="sp-cart-section">
+            <button
+              className="sp-cart-button"
+              onClick={handleAddToCart}
+              disabled={!data || addingToCart}
+            >
+              {addingToCart ? "Adding..." : "Add to Cart"}
+            </button>
+
+            <span className="sp-cart-count">
+              Cart: {cartCount} games
+            </span>
+
+            {cartMessage && (
+              <p className="sp-message">{cartMessage}</p>
+            )}
+            <button
+              className="sp-view-cart-button"
+              onClick={() => {
+                const extensionApi = (
+                  globalThis as typeof globalThis & {
+                    chrome: {
+                      runtime: {
+                        sendMessage: (message: unknown) => Promise<unknown>;
+                      };
+                    };
+                  }
+                ).chrome;
+
+                extensionApi.runtime.sendMessage({
+                  type: "OPEN_CART"
+                });
+              }}
+            >
+              View Cart ({cartCount})
+            </button>
+          </div>
         </div>
       )}
     </section>

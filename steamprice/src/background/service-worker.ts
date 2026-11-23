@@ -8,6 +8,7 @@ import {
   type RegionalPricesResponse
 } from "../types/steam";
 
+
 const CACHE_DURATION = 15 * 60 * 1000;
 
 interface CacheEntry {
@@ -20,6 +21,12 @@ interface PriceMessage {
   appId: string;
 }
 
+interface OpenCartMessage {
+  type: "OPEN_CART";
+}
+
+type ExtensionMessage = PriceMessage | OpenCartMessage;
+
 const extensionApi = (globalThis as typeof globalThis & {
   chrome: {
     storage: {
@@ -27,6 +34,9 @@ const extensionApi = (globalThis as typeof globalThis & {
         get(key: string): Promise<Record<string, unknown>>;
         set(items: Record<string, unknown>): Promise<void>;
       };
+    };
+    tabs: {
+      create(properties: { url: string }): Promise<unknown>;
     };
     runtime: {
       onMessage: {
@@ -63,6 +73,8 @@ async function getRegionalPrices(
 
 
   // Fetch all three regions concurrently.
+
+let gameName = `App ${appId}`;
   
 const prices = await Promise.all(
   REGIONS.map(async (region) => {
@@ -72,7 +84,8 @@ const prices = await Promise.all(
         fetchUsdExchangeRate(region.currencyCode),
       ]);
 
-      const { price, free } = result;
+      const { name, price, free } = result;
+      gameName = name;
 
       const usdEquivalent =
         price !== null
@@ -106,7 +119,11 @@ const prices = await Promise.all(
 );
 
 
-  const data: RegionalPricesResponse = { appId, prices };
+  const data: RegionalPricesResponse = {
+    appId,
+    gameName,
+    prices
+  };
   await extensionApi.storage.local.set({
     [cacheKey]: { timestamp: Date.now(), data } satisfies CacheEntry,
   });
@@ -114,11 +131,15 @@ const prices = await Promise.all(
 }
 
 extensionApi.runtime.onMessage.addListener(
-  (
-    message: PriceMessage,
-    _sender,
-    sendResponse
-  ) => {
+  (message: ExtensionMessage, _sender, sendResponse) => {
+
+    if (message.type === "OPEN_CART") {
+      extensionApi.tabs.create({
+        url: "cart.html"
+      });
+
+      return;
+    }
 
     if (message.type !== "GET_REGIONAL_PRICES") {
       return;

@@ -48,6 +48,7 @@ export interface RegionalPrice {
 
 export interface RegionalPricesResponse {
   appId: string;
+  gameName: string;
   prices: RegionalPrice[];
   error?: string;
 }
